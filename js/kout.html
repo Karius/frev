@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <title>Document</title>
+ </head>
+ <body>
+
+ <script>
+/**
+ *@description:将string转为UTF-8格式signed char字节数组
+ *
+ */
+function stringToBytes(str){
+	var bytes = new Array();
+	for (var i = 0; i < str.length; i++) {
+		var c = str.charCodeAt(i);
+		var s = parseInt(c).toString(2);
+		if(c >= parseInt("000080",16) && c <= parseInt("0007FF",16)){
+			var af = "";
+			for(var j = 0; j < (11 - s.length); j++){
+				af += "0";
+			}
+			af += s;
+			var n1 = parseInt("110" + af.substring(0,5),2);
+			var n2 = parseInt("110" + af.substring(5),2);
+			if(n1 > 127) n1 -= 256;
+			if(n2 > 127) n2 -= 256;
+			bytes.push(n1);
+			bytes.push(n2);
+		}else if(c >= parseInt("000800",16) && c <= parseInt("00FFFF",16)){
+			var af = "";
+			for(var j = 0; j < (16 - s.length); j++){
+				af += "0";
+			}
+			af += s;
+			var n1 = parseInt("1110" + af.substring(0,4),2);
+			var n2 = parseInt("10" + af.substring(4,10),2);
+			var n3 = parseInt("10" + af.substring(10),2);
+			if(n1 > 127) n1 -= 256;
+			if(n2 > 127) n2 -= 256;
+			if(n3 > 127) n3 -= 256;
+			bytes.push(n1);
+			bytes.push(n2);
+			bytes.push(n3);
+		}else if(c >= parseInt("010000",16) && c <= parseInt("10FFFF",16)){
+			var af = "";
+			for(var j = 0; j < (21 - s.length); j++){
+				af += "0";
+			}
+			af += s;
+			var n1 = parseInt("11110" + af.substring(0,3),2);
+			var n2 = parseInt("10" + af.substring(3,9),2);
+			var n3 = parseInt("10" + af.substring(9,15),2);
+			var n4 = parseInt("10" + af.substring(15),2);
+			if(n1 > 127) n1 -= 256;
+			if(n2 > 127) n2 -= 256;
+			if(n3 > 127) n3 -= 256;
+			if(n4 > 127) n4 -= 256;
+			bytes.push(n1);
+			bytes.push(n2);
+			bytes.push(n3);
+			bytes.push(n4);
+		}else{
+			bytes.push(c & 0xff);
+		}
+	}
+	return bytes;
+}
+
+// 将字符串转换为UTF8 singed char数组
+function str2UTF8(str){
+	var bytes = new Array(); 
+	var len,c;
+	len = str.length;
+	for(var i = 0; i < len; i++){
+		c = str.charCodeAt(i);
+		if(c >= 0x010000 && c <= 0x10FFFF){
+			bytes.push(((c >> 18) & 0x07) | 0xF0);
+			bytes.push(((c >> 12) & 0x3F) | 0x80);
+			bytes.push(((c >> 6) & 0x3F) | 0x80);
+			bytes.push((c & 0x3F) | 0x80);
+		}else if(c >= 0x000800 && c <= 0x00FFFF){
+			bytes.push(((c >> 12) & 0x0F) | 0xE0);
+			bytes.push(((c >> 6) & 0x3F) | 0x80);
+			bytes.push((c & 0x3F) | 0x80);
+		}else if(c >= 0x000080 && c <= 0x0007FF){
+			bytes.push(((c >> 6) & 0x1F) | 0xC0);
+			bytes.push((c & 0x3F) | 0x80);
+		}else{
+			bytes.push(c & 0xFF);
+		}
+	}
+	return bytes;
+}
+
+// 将字节数组转换为str
+ function byteToString(arr) {
+	if(typeof arr === 'string') {
+		return arr;
+	}
+	var str = '',
+		_arr = arr;
+	for(var i = 0; i < _arr.length; i++) {
+		var one = _arr[i].toString(2),
+			v = one.match(/^1+?(?=0)/);
+		if(v && one.length == 8) {
+			var bytesLength = v[0].length;
+			var store = _arr[i].toString(2).slice(7 - bytesLength);
+			for(var st = 1; st < bytesLength; st++) {
+				store += _arr[st + i].toString(2).slice(2);
+			}
+			str += String.fromCharCode(parseInt(store, 2));
+			i += bytesLength - 1;
+		} else {
+			str += String.fromCharCode(_arr[i]);
+		}
+	}
+	return str;
+}
+
+
+// 将十六进制字符串转字节数组
+function Str2Bytes(str) 
+{
+    var pos = 0;
+    var len = str.length;
+    if(len %2 != 0) {
+        return null; 
+    }
+ 
+	len /= 2;
+    var hexA = new Array();
+ 
+	for(var i=0; i<len; i++) {
+        var s = str.substr(pos, 2);
+        var v = parseInt(s, 16);
+        hexA.push(v);
+        pos += 2;
+     }
+     return hexA;
+ }
+
+
+// 将字节数组转十六进制字符串 
+function Bytes2Str(arr)
+ {
+    var str = "";
+    for(var i=0; i<arr.length; i++) {
+       var tmp = arr[i].toString(16);
+       if(tmp.length == 1) {
+            tmp = "0" + tmp;
+       }
+       str += tmp;
+     }
+    return str.toUpperCase ();
+ }
+ </script>
+
+<script>
+// 将字符串按位取反后顺序反转
+function reverseStr2Bytes (str) {
+	// 将字符串转换为UTF-8的byte数组。
+	var bytes = str2UTF8 (str);
+	
+	for (var i in bytes) {
+	//for (var i=0; i<byte_reverse.length; i++) {
+		// javascript 默认是有符号数，通过右移0操作转为无符号数，
+		// 然后按位与0xff获得16位无符号整数结果
+		bytes[i] = (~bytes[i] >>>0) & 0xff;
+	}
+
+	// 返回顺序反转后的字节数组
+	return bytes.reverse();
+}
+
+// 将byte数组反转后转换为字符串，就是上面reverseStr2Bytes函数的反向操作
+function reverseBytes2Str (strHex) {
+
+	// 十六进制字符串形式转换为byte数组
+	var bytes = Str2Bytes (strHex);
+
+	for (var i in bytes) {
+		// javascript 默认是有符号数，通过右移0操作转为无符号数，
+		// 然后按位与0xff获得16位无符号整数结果
+		bytes[i] = (~bytes[i] >>>0) & 0xff;
+	}
+
+	return byteToString (bytes.reverse());
+}
+</script>
+
+<script>
+function convertStr () {
+	var str = cnr.txt.value;
+	var bt = reverseStr2Bytes (str);
+	cnr.outHexTxt.value = Bytes2Str(bt);
+}
+
+function convertBytes () {
+	var strHex = cnr.outHexTxt.value;
+
+	cnr.txt.value = reverseBytes2Str (strHex);
+}
+</script>
+
+
+<form name="cnr">
+	<input type="text" name="txt" /> <br>
+	<button type="button" onclick="convertStr()">转换</button>
+	<button type="button" onclick="convertBytes()">反转换</button> <br>
+	<textarea name="outHexTxt" rows="10" cols="55"></textarea>
+</form>
+
+</body>
+</html>
